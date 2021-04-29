@@ -72,8 +72,8 @@ def on_load(server: ServerInterface, old_module):
         then(Number("waiting").runs()).
         # & stop
         # ~ Close Minecraft Server
-        then(Literal("stop").runs()).
-        then(Number("waiting").runs()).
+        then(Literal("stop").runs().
+        then(Number("waiting").runs())).
         # & start
         # ~ Start Minecraft Server
         then(Literal("start").runs()).
