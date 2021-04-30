@@ -68,21 +68,23 @@ def on_load(server: ServerInterface, old_module):
 
         # & shutdown
         # ~ Close MCDR and Minecraft Server
-        then(Literal("shutdown").runs()).
-        then(Number("waiting").runs()).
+        then(Literal("shutdown").runs().
+        then(Number("waiting").runs())).
         # & stop
         # ~ Close Minecraft Server
-        then(Literal("stop").runs()).
-        then(Number("waiting").runs()).
+        then(Literal("stop").runs().
+        then(Number("waiting").runs())).
         # & start
         # ~ Start Minecraft Server
-        then(Literal("start").runs()).
-        then(Number("waiting").runs()).
+        then(Literal("start").runs().
+        then(Number("waiting").runs())).
 
         # & confirm
         then(Literal("confirm").runs()).
         # & cancel
-        then(Literal("cancel").runs())
+        then(Literal("cancel").runs()).
+        # & abort
+        then(Literal("abort").runs())
     )
 
 # ^ Processing commands here
@@ -96,5 +98,8 @@ class Process:
     def request(self,src,ctx,type):
         if src.player in self.has_request:
             self.server.reply(RText("你有一個請求"))
+            return
+        if type=="shutdown":
+            self._shutdown(ctx["waiting"])
 
 
