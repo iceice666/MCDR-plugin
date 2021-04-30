@@ -82,7 +82,8 @@ def on_load(server: ServerInterface, old_module):
         # & confirm
         then(Literal("confirm").runs()).
         # & cancel
-        then(Literal("cancel").runs())
+        then(Literal("cancel").runs()).
+        # & alo
     )
 
 # ^ Processing commands here
