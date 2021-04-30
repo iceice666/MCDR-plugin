@@ -99,6 +99,6 @@ class Process:
         if src.player in self.has_request:
             self.server.reply(RText("你有一個請求"))
             return
-        
+        if type==""
 
 
