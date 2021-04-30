@@ -84,7 +84,7 @@ def on_load(server: ServerInterface, old_module):
         # & cancel
         then(Literal("cancel").runs()).
         # & alort
-        then(Literal("a")
+        then(Literal("alort").runs())
     )
 
 # ^ Processing commands here
