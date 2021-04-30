@@ -100,6 +100,6 @@ class Process:
             self.server.reply(RText("你有一個請求"))
             return
         if type=="shutdown":
-            
+            self._shutdown(ctx[""])
 
 
