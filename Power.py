@@ -83,8 +83,8 @@ def on_load(server: ServerInterface, old_module):
         then(Literal("confirm").runs()).
         # & cancel
         then(Literal("cancel").runs()).
-        # & alort
-        then(Literal("alort").runs())
+        # & abort
+        then(Literal("abort").runs())
     )
 
 # ^ Processing commands here
@@ -98,5 +98,6 @@ class Process:
     def request(self,src,ctx,type):
         if src.player in self.has_request:
             self.server.reply(RText("你有一個請求"))
+            
 
 
