@@ -94,7 +94,6 @@ def on_load(server: ServerInterface, old_module):
 
 # ^ Processing commands here
 
-
 class Process:
     def __init__(self) -> None:
         pass
