@@ -141,3 +141,24 @@ class Request:
             elif waiting-i<= 0:
                 self.server.stop_exit()
             sleep(1)
+
+    def _stop(self, waiting=10):
+        for i in range(waiting):
+            if waiting-i == 60:
+                self.server.boardcast(
+                    RText("Server will stop soon! {} secs remaining.".format(waiting-i), RColor=RColor.red))
+            elif waiting-i == 30:
+                self.server.boardcast(
+                    RText("Server will stop soon! {} secs remaining.".format(waiting-i), RColor=RColor.red))
+            elif waiting-i == 15:
+                self.server.boardcast(
+                    RText("Server will stop soon! {} secs remaining.".format(waiting-i), RColor=RColor.red))
+            elif waiting-i == 10:
+                self.server.boardcast(
+                    RText("Server will stop soon! {} secs remaining.".format(waiting-i), RColor=RColor.red))
+            elif waiting-i <= 10:
+                self.server.boardcast(
+                    RText("Countdown {} secs.".format(waiting-i), RColor=RColor.red))
+            elif waiting-i <= 0:
+                self.server.stop()
+            sleep(1)
