@@ -108,7 +108,7 @@ class Request:
 
     def create(self, src, ctx, type):
         if self.Request_info["type"] != None:
-            self.server.reply(RText("有已經一個請求了在執行了!!!", RColor=RColor.red))
+            self.server.reply(RText("有已經一個經過確認的請求了在執行了!!!", RColor=RColor.red))
             return
 
         self.Request_info["posted_by"] = src.player
