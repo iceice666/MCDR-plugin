@@ -130,27 +130,27 @@ class Request:
             return
 
 
-class _counting(threading.Thread):
-    def __init__(self, server):
-        super().__init__()
-        self.server = server
+    class _counting(threading.Thread):
+        def __init__(self, server):
+            super().__init__()
+            self.server = server
 
-    def run(self, _type: str, _callback: callable, waiting: int = 10):
-        self.server.execute(
-            "/bossbar set MCDR_Plugin.Power._counting max {}".format(waiting))
-
-        for i in range(waiting):
-            if (waiting-i == 60 | waiting-i == 30 | waiting-i == 15 | waiting-i == 10):
-                self.server.boardcast(
-                    RText("Server will {} soon! {} secs remaining.".format(_type, waiting-i), RColor=RColor.red))
-            elif waiting-i <= 10:
-                self.join()
-            elif waiting-i <= 5:
-                self.server.boardcast(
-                    RText("Countdown {} secs.".format(waiting-i), RColor=RColor.red))
-            elif waiting-i <= 0:
-                _callback()
-                break
+        def run(self, _type: str, _callback: callable, self.waiting: int = 10):
             self.server.execute(
-                "/bossbar set MCDR_Plugin.Power._counting value {}".format(waiting-i))
-            sleep(1)
+                "/bossbar set MCDR_Plugin.Power._counting max {}".format(self.waiting))
+
+            for i in range(self.waiting):
+                if (self.waiting-i == 60 | self.waiting-i == 30 | self.waiting-i == 15 | self.waiting-i == 10):
+                    self.server.boardcast(
+                        RText("Server will {} soon! {} secs remaining.".format(_type, waiting-i), RColor=RColor.red))
+                elif self.waiting-i <= 10:
+                    self.join()
+                elif self.waiting-i <= 5:
+                    self.server.boardcast(
+                        RText("Countdown {} secs.".format(waiting-i), RColor=RColor.red))
+                elif waiting-i <= 0:
+                    _callback()
+                    break
+                self.server.execute(
+                    "/bossbar set MCDR_Plugin.Power._counting value {}".format(waiting-i))
+                sleep(1)
