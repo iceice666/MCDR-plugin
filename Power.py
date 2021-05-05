@@ -5,6 +5,7 @@ from mcdreforged.plugin.server_interface import ServerInterface
 from mcdreforged.command.builder.command_node import Literal, Number
 
 from time import sleep
+import threading
 
 import lib.plugin_metadata as pm
 
@@ -96,8 +97,8 @@ def on_load(server: ServerInterface, old_module):
 
 
 class Process:
-    def __init__(self,server) -> None:
-        self.server=server
+    def __init__(self, server) -> None:
+        self.server = server
 
 
 class Request:
@@ -106,9 +107,12 @@ class Request:
     def __init__(self, server):
         self.server = server
         self.server.execute("/bossbar add MCDR_Plugin.Power._counting")
-        self.server.execute("/bossbar set MCDR_Plugin.Power._counting color red")
-        self.server.execute("/bossbar set MCDR_Plugin.Power._counting visible true")
-        self.server.execute("/bossbar set MCDR_Plugin.Power._counting style progress")
+        self.server.execute(
+            "/bossbar set MCDR_Plugin.Power._counting color red")
+        self.server.execute(
+            "/bossbar set MCDR_Plugin.Power._counting visible true")
+        self.server.execute(
+            "/bossbar set MCDR_Plugin.Power._counting style progress")
 
     def create(self, src, ctx, type):
         if self.Request_info["type"] != None:
@@ -118,36 +122,35 @@ class Request:
         self.Request_info["posted_by"] = src.player
         self.Request_info["type"] = type.lower()
         if type == "shutdown":
-            self._counting("SHUTDOWN",self.server.stop_exit,ctx["waiting"])
+            self._counting("SHUTDOWN", self.server.stop_exit, ctx["waiting"])
         elif type == "stop":
-            self._counting("STOP",self.server.stop,ctx["waiting"])
+            self._counting("STOP", self.server.stop, ctx["waiting"])
         else:
             self.Request_info = {"type": None, "posted_by": ""}
             return
 
 
+class _counting(threading.Thread):
+    def __init__(self, server):
+        super().__init__()
+        self.server = server
 
-    def _counting(self,_type:str,_callback:callable,waiting=10:int):
-        self.server.execute("/bossbar set MCDR_Plugin.Power._counting max {}".format(waiting))
+    def run(self, _type: str, _callback: callable, waiting: int = 10):
+        self.server.execute(
+            "/bossbar set MCDR_Plugin.Power._counting max {}".format(waiting))
 
         for i in range(waiting):
-            if waiting-i == 60:
+            if (waiting-i == 60 | waiting-i == 30 | waiting-i == 15 | waiting-i == 10):
                 self.server.boardcast(
-                    RText("Server will {} soon! {} secs remaining.".format(_type,waiting-i), RColor=RColor.red))
-            elif waiting-i == 30:
-                self.server.boardcast(
-                    RText("Server will {} soon! {} secs remaining.".format(_type,waiting-i), RColor=RColor.red))
-            elif waiting-i == 15:
-                self.server.boardcast(
-                    RText("Server will {} soon! {} secs remaining.".format(_type,waiting-i), RColor=RColor.red))
-            elif waiting-i == 10:
-                self.server.boardcast(
-                    RText("Server will {} soon! {} secs remaining.".format(_type,waiting-i), RColor=RColor.red))
+                    RText("Server will {} soon! {} secs remaining.".format(_type, waiting-i), RColor=RColor.red))
             elif waiting-i <= 10:
+                self.join()
+            elif waiting-i <= 5:
                 self.server.boardcast(
                     RText("Countdown {} secs.".format(waiting-i), RColor=RColor.red))
             elif waiting-i <= 0:
                 _callback()
                 break
-            self.server.execute("/bossbar set MCDR_Plugin.Power._counting value {}".format(waiting-i))
+            self.server.execute(
+                "/bossbar set MCDR_Plugin.Power._counting value {}".format(waiting-i))
             sleep(1)
