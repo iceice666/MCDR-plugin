@@ -95,7 +95,6 @@ def on_load(server: ServerInterface, old_module):
 
 # ^ Processing commands here
 
-
 class Process:
     def __init__(self, server) -> None:
         self.server = server
@@ -103,6 +102,8 @@ class Process:
 
 class Request:
     Request_info = {"type": None, "posted_by": ""}
+
+
 
     def __init__(self, server):
         self.server = server
@@ -114,55 +115,65 @@ class Request:
         self.server.execute(
             "/bossbar set MCDR_Plugin.Power._counting style progress")
 
-    def create(self, src, ctx, type):
+
+
+
+    def create(self, src, ctx, _type):
         if self.Request_info["type"] != None:
             self.server.reply(RText("有已經一個請求了在執行了!!!", RColor=RColor.red))
             return
 
         self.Request_info["posted_by"] = src.player
-        self.Request_info["type"] = type.lower()
-        if type == "shutdown":
-            self._counting("SHUTDOWN", self.server.stop_exit, ctx["waiting"])
-        elif type == "stop":
+        self.Request_info["type"] = _type.lower()
+        if _type == "shutdown":
+            CObj_STDN=_counting(self.server)
+            CObj_STDN.start(("SHUTDOWN", self.server.stop_exit, ctx["waiting"],))
+        elif _type == "stop":
             self._counting("STOP", self.server.stop, ctx["waiting"])
         else:
             self.Request_info = {"type": None, "posted_by": ""}
             return
 
-        self.Request_info["posted_by"] = src.player
-        self.Request_info["type"] = type.lower()
-        if type == "shutdown":
-            self._shutdown(ctx["waiting"])
-        elif type == "stop":
+        self.Request_info["posted_by"] = src.player~
+        self.Request_info["type"] = _type.lower()
+        if _type == "shutdown":
+            self._counting()
+        elif _type == "stop":
             self._stop(ctx["waiting"])
         else:
             self.Request_info = {"type": None, "posted_by": ""}
             return
 
-
     # TODO Counting Thread unfinished
 
-    class _counting(threading.Thread):
-        def __init__(self, server):
-            super().__init__()
-            self.server = server
 
-        def run(self, _type: str, _callback: callable, waiting: int = 10):
+class _counting(threading.Thread):
+    def __init__(self, server):
+        super().__init__()
+        self.server = server
+
+    def run(self, _type: str, _callback: callable, waiting: int = 10):
+        self.server.execute(
+            "/bossbar set MCDR_Plugin.Power._counting max {}".format(waiting))
+
+        for i in range(waiting):
+            if (waiting-i == 60 | waiting-i == 30 | waiting-i == 15 | waiting-i == 10):
+                self.server.boardcast(
+                    RText("Server will {} soon! {} secs remaining.".format(_type, waiting-i), RColor=RColor.red))
+            elif waiting-i <= 10:
+                self.join()
+            elif waiting-i <= 5:
+                self.server.boardcast(
+                    RText("Countdown {} secs.".format(waiting-i), RColor=RColor.red))
+            elif waiting-i <= 0:
+                _callback()
+                break
             self.server.execute(
-                "/bossbar set MCDR_Plugin.Power._counting max {}".format(waiting))
-
-            for i in range(waiting):
-                if (waiting-i == 60 | waiting-i == 30 | waiting-i == 15 | waiting-i == 10):
-                    self.server.boardcast(
-                        RText("Server will {} soon! {} secs remaining.".format(_type, waiting-i), RColor=RColor.red))
-                elif waiting-i <= 10:
-                    self.join()
-                elif waiting-i <= 5:
-                    self.server.boardcast(
-                        RText("Countdown {} secs.".format(waiting-i), RColor=RColor.red))
-                elif waiting-i <= 0:
-                    _callback()
-                    break
-                self.server.execute(
-                    "/bossbar set MCDR_Plugin.Power._counting value {}".format(waiting-i))
-                sleep(1)
+                "/bossbar set MCDR_Plugin.Power._counting value {}".format(waiting-i))
+            cd_rj = ["", {"text": _type, "underlined": True, "color": "red"}, " in ", {
+                "text": waiting-i, "bold": True, "color": "gold"}, " secs"]
+            self.server.execute(
+                "/bossbar set MCDR_Plugin.Power._counting name {}".format(
+                    str(cd_rj))
+            )
+            sleep(1)
