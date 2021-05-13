@@ -147,10 +147,12 @@ def _counting(self, _type: str, _callback: callable, waiting: int = 10):
         elif waiting-i <= 0:
             _callback()
             break
-        self.server.execute(
-            "/bossbar set MCDR_Plugin.Power._counting value {}".format(waiting-i))
+
         cd_rj = ["", {"text": _type, "underlined": True, "color": "red"}, " in ", {
             "text": waiting-i, "bold": True, "color": "gold"}, " secs"]
+
+        self.server.execute(
+            "/bossbar set MCDR_Plugin.Power._counting value {}".format(waiting-i))     
         self.server.execute(
             "/bossbar set MCDR_Plugin.Power._counting name {}".format(
                 str(cd_rj))
