@@ -126,7 +126,10 @@ class Request:
             self.server.reply(RText("有一個請求待確認!，如果要執行新的請求，請先cancel目前的請求。", color=RColor.red))
             return
 
-        self.Request_info["posted_by"] = src.player
+        if src.is_player==True:
+            self.Request_info["posted_by"] = src.player
+        else:
+            self.Request_info["posted_by"]="#all"
         self.Request_info["type"] = _type.lower()
         self._waiting=_waiting
         self.Request_need_confirm = True

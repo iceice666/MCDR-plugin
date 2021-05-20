@@ -1,3 +1,4 @@
 __pycache__/
 .vscode/
 lib/__pycache__/
+lib/__pycache__/plugin_metadata.cpython-39.pyc
