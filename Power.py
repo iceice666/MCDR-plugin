@@ -72,18 +72,18 @@ def on_load(server: ServerInterface, old_module):
         # & shutdown
         # ~ Close MCDR and Minecraft Server
         then(Literal("shutdown").runs(lambda src: request.create(src, 30, "shutdown")).
-             then(Number("waiting").runs(lambda src, ctx: request.create(src, ctx, "shutdown")))).
+             then(Number("waiting").runs(lambda src, ctx: request.create(src, ctx["waiting"], "shutdown")))).
         # & stop
         # ~ Close Minecraft Server
         then(Literal("stop").runs(lambda src: request.create(src, 30, "stop")).
-             then(Number("waiting").runs(lambda src, ctx: request.create(src, ctx, "stop")))).
+             then(Number("waiting").runs(lambda src, ctx: request.create(src, ctx["waiting"], "stop")))).
         # & start
         # ~ Start Minecraft Server
         then(Literal("start").runs(lambda src: request.create(src, 0, "start"))).
         # & restart
         # ~ Restart Minecraft Server
         then(Literal("restart").runs(lambda src:request.create(src,30,"restart")).
-             then(Number("waiting").runs(lambda src, ctx: request.create(src, ctx, "restart")))).
+             then(Number("waiting").runs(lambda src, ctx: request.create(src, ctx["waiting"], "restart")))).
 
         # & confirm
         then(Literal("confirm").runs(lambda :request.confirm())).
@@ -118,26 +118,26 @@ class Request:
         self.server.execute(
             "/bossbar set MCDR_Plugin.Power._counting style progress")
 
-    def create(self, src, ctx, _type):
+    def create(self, src, _waiting, _type):
         if self.Request_is_running == True:
-            self.server.reply(RText("已經有一個請求在執行了!!!", RColor=RColor.red))
+            self.server.reply(RText("已經有一個請求在執行了!!!", color=RColor.red))
             return
         elif self.Request_need_confirm==True:
-            self.server.reply(RText("有一個請求待確認!，如果要執行新的請求，請先cancel目前的請求。", RColor=RColor.red))
+            self.server.reply(RText("有一個請求待確認!，如果要執行新的請求，請先cancel目前的請求。", color=RColor.red))
             return
 
         self.Request_info["posted_by"] = src.player
         self.Request_info["type"] = _type.lower()
-        self._waiting=ctx["waiting"]
+        self._waiting=_waiting
         self.Request_need_confirm = True
         if _type == "shutdown":
-            self.Request_callback = self.server.stop_exit()
+            self.Request_callback = self.server.stop_exit
         elif _type == "stop":
-            self.Request_callback = self.server.stop()
+            self.Request_callback = self.server.stop
         elif _type == "start":
-            self.Request_callback = self.server.start()
+            self.Request_callback = self.server.start
         elif _type == "restart":
-            self.Request_callback = self.server.restart()
+            self.Request_callback = self.server.restart
         else:
             self.Request_info = {"type": None, "posted_by": ""}
             self.Request_need_confirm = False
@@ -145,8 +145,11 @@ class Request:
 
 
     def confirm(self):
+        if self.Request_need_confirm==False:
+            self.server.reply(
+                RText("無請求待確認!", color=RColor.red))
         _type = self.Request_info["type"]
-        _callback = self.Request_args
+        _callback = self.Request_callback
         self.Request_is_running=True
         self.Request_need_confirm=False
 
@@ -158,7 +161,7 @@ class Request:
 
     def abort(self):
         if self.Request_is_running == False:
-            self.server.reply(RText("無請求在執行中!!!", RColor=RColor.red))
+            self.server.reply(RText("無請求在執行中!!!", color=RColor.red))
             return
         self.COUNTING.stop()
         while self.COUNTING.is_alive() is not True:
@@ -193,12 +196,12 @@ class _counting(threading.Thread):
         for i in range(self.waiting):
             if (self.waiting-i == 60 | self.waiting-i == 30 | self.waiting-i == 15 | self.waiting-i == 10):
                 self.server.boardcast(
-                    RText("Server will {} soon! {} secs remaining.".format(self._type, self.waiting-i), RColor=RColor.red))
+                    RText("Server will {} soon! {} secs remaining.".format(self._type, self.waiting-i), color=RColor.red))
             elif self.waiting-i <= 10:
                 self.join()
             elif self.waiting-i <= 5:
                 self.server.boardcast(
-                    RText("Countdown {} secs.".format(self.waiting-i), RColor=RColor.red))
+                    RText("Countdown {} secs.".format(self.waiting-i), color=RColor.red))
             elif self.waiting-i <= 0:
                 self._callback()
                 break

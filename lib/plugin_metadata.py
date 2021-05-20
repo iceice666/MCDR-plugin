@@ -10,6 +10,7 @@ class metadata:
                  id="my_plugin",
                  author="Myself",
                  version="1.0.0",
+                 link="",
                  name: str or RTextBase = "My Plugin",
                  prefix="prefix",
                  description: str or RTextBase = "A MCDR plugin",
@@ -19,6 +20,7 @@ class metadata:
         self.PLUGIN_METADATA = {}
         self.PLUGIN_METADATA["id"] = id
         self.PLUGIN_METADATA["author"] = author
+        self.PLUGIN_METADATA["link"]=link
         self.PLUGIN_METADATA["version"] = version
         self.PLUGIN_METADATA["name"] = name
         self.PLUGIN_METADATA["prefix"] = prefix
