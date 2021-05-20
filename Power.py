@@ -71,26 +71,29 @@ def on_load(server: ServerInterface, old_module):
 
         # & shutdown
         # ~ Close MCDR and Minecraft Server
-        then(Literal("shutdown").runs().
-             then(Number("waiting").runs())).
+        then(Literal("shutdown").runs(lambda src: request.create(src, 30, "shutdown")).
+             then(Number("waiting").runs(lambda src, ctx: request.create(src, ctx, "shutdown")))).
         # & stop
         # ~ Close Minecraft Server
-        then(Literal("stop").runs().
-             then(Number("waiting").runs())).
+        then(Literal("stop").runs(lambda src: request.create(src, 30, "stop")).
+             then(Number("waiting").runs(lambda src, ctx: request.create(src, ctx, "stop")))).
         # & start
         # ~ Start Minecraft Server
-        then(Literal("start").runs()).
+        then(Literal("start").runs(lambda src: request.create(src, 0, "start"))).
+        # & restart
+        # ~ Restart Minecraft Server
+        then(Literal("restart").runs(lambda src:request.create(src,30,"restart")).
+             then(Number("waiting").runs(lambda src, ctx: request.create(src, ctx, "restart")))).
 
         # & confirm
-        then(Literal("confirm").runs()).
+        then(Literal("confirm").runs(lambda :request.confirm())).
         # & cancel
-        then(Literal("cancel").runs()).
+        then(Literal("cancel").runs(lambda :request.cancel())).
         # & abort
         # ! Only server owner or request creator can abort it
         then(Literal("abort").
              requires(lambda src: (src.has_permission(4) | src.player == request.Request_info["posted_by"])).
-             runs()
-            )
+             runs(lambda :request.abort()))
     )
 
 
@@ -103,6 +106,9 @@ class Process:
 
 class Request:
     Request_info = {"type": None, "posted_by": ""}
+    Request_callback:callable = None
+    Request_is_running=False
+    Request_need_confirm=False
 
     def __init__(self, server):
         self.server = server
@@ -110,51 +116,104 @@ class Request:
         self.server.execute(
             "/bossbar set MCDR_Plugin.Power._counting color red")
         self.server.execute(
-            "/bossbar set MCDR_Plugin.Power._counting visible true")
-        self.server.execute(
             "/bossbar set MCDR_Plugin.Power._counting style progress")
 
     def create(self, src, ctx, _type):
-        if self.Request_info["type"] != None:
-            self.server.reply(RText("有已經一個請求了在執行了!!!", RColor=RColor.red))
+        if self.Request_is_running == True:
+            self.server.reply(RText("已經有一個請求在執行了!!!", RColor=RColor.red))
+            return
+        elif self.Request_need_confirm==True:
+            self.server.reply(RText("有一個請求待確認!，如果要執行新的請求，請先cancel目前的請求。", RColor=RColor.red))
             return
 
         self.Request_info["posted_by"] = src.player
         self.Request_info["type"] = _type.lower()
+        self._waiting=ctx["waiting"]
+        self.Request_need_confirm = True
         if _type == "shutdown":
-
+            self.Request_callback = self.server.stop_exit()
         elif _type == "stop":
-
+            self.Request_callback = self.server.stop()
+        elif _type == "start":
+            self.Request_callback = self.server.start()
+        elif _type == "restart":
+            self.Request_callback = self.server.restart()
         else:
             self.Request_info = {"type": None, "posted_by": ""}
+            self.Request_need_confirm = False
             return
+
+
+    def confirm(self):
+        _type = self.Request_info["type"]
+        _callback = self.Request_args
+        self.Request_is_running=True
+        self.Request_need_confirm=False
+
+        self._COUNTING = _counting(self.server, _type, _callback, self._waiting)
+
+    def cancel(self):
+        self.Request_callback=None
+        self.Request_need_confirm=False
+
+    def abort(self):
+        if self.Request_is_running == False:
+            self.server.reply(RText("無請求在執行中!!!", RColor=RColor.red))
+            return
+        self.COUNTING.stop()
+        while self.COUNTING.is_alive() is not True:
+            pass
+        self.Request_info = {"type": None, "posted_by": ""}
+        self.Request_is_running = False
+        self.Request_need_confirm = False
+        self.server.execute(
+            "/bossbar set MCDR_Plugin.Power._counting visible false")
 
     # TODO Counting Thread unfinished
 
 
-def _counting(self, _type: str, _callback: callable, waiting: int = 10):
-    self.server.execute(
-        "/bossbar set MCDR_Plugin.Power._counting max {}".format(waiting))
-    for i in range(waiting):
-        if (waiting-i == 60 | waiting-i == 30 | waiting-i == 15 | waiting-i == 10):
-            self.server.boardcast(
-                RText("Server will {} soon! {} secs remaining.".format(_type, waiting-i), RColor=RColor.red))
-        elif waiting-i <= 10:
-            self.join()
-        elif waiting-i <= 5:
-            self.server.boardcast(
-                RText("Countdown {} secs.".format(waiting-i), RColor=RColor.red))
-        elif waiting-i <= 0:
-            _callback()
-            break
+class _counting(threading.Thread):
+    def __init__(self, server, _type: str, _callback: callable, waiting: int = 10):
+        super().__init__()
+        self.setDaemon(True)
+        self.setName("Power")
+        self._stop_event = threading.Event()
 
-        cd_rj = ["", {"text": _type, "underlined": True, "color": "red"}, " in ", {
-            "text": waiting-i, "bold": True, "color": "gold"}, " secs"]
+        self.server = server
 
+        self._type = _type
+        self._callback = _callback
+        self.waiting = waiting
+
+    def run(self):
         self.server.execute(
-            "/bossbar set MCDR_Plugin.Power._counting value {}".format(waiting-i))     
+            "/bossbar set MCDR_Plugin.Power._counting max {}".format(self.waiting))
         self.server.execute(
-            "/bossbar set MCDR_Plugin.Power._counting name {}".format(
-                str(cd_rj))
-        )
-        sleep(1)
+            "/bossbar set MCDR_Plugin.Power._counting visible true")
+        for i in range(self.waiting):
+            if (self.waiting-i == 60 | self.waiting-i == 30 | self.waiting-i == 15 | self.waiting-i == 10):
+                self.server.boardcast(
+                    RText("Server will {} soon! {} secs remaining.".format(self._type, self.waiting-i), RColor=RColor.red))
+            elif self.waiting-i <= 10:
+                self.join()
+            elif self.waiting-i <= 5:
+                self.server.boardcast(
+                    RText("Countdown {} secs.".format(self.waiting-i), RColor=RColor.red))
+            elif self.waiting-i <= 0:
+                self._callback()
+                break
+
+            cd_rj = ["", {"text": self._type, "underlined": True, "color": "red"}, " in ", {
+                "text": self.waiting-i, "bold": True, "color": "gold"}, " secs"]
+
+            self.server.execute(
+                "/bossbar set MCDR_Plugin.Power._counting value {}".format(self.waiting-i))
+            self.server.execute(
+                "/bossbar set MCDR_Plugin.Power._counting name {}".format(
+                    str(cd_rj))
+            )
+            sleep(1)
+
+    def stop(self):
+        self._stop_event.set()
+        self.join()
